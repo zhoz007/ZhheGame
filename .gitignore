@@ -2,5 +2,13 @@
 /.vscode
 /.idea
 *.log
+git.txt
 .DS_Store
 assets/build/
+
+# Cocos生成的文件和目录
+src/library/
+src/temp/
+src/profiles/
+# 仅当assets为空目录且由Cocos引擎生成时
+# src/assets/

@@ -1,0 +1,7 @@
+### 提交代码
+git add .
+git commit -m "描述"
+git push
+
+### 更新代码
+git pull
