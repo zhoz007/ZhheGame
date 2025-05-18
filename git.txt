@@ -5,3 +5,6 @@ git push
 
 ### 更新代码
 git pull
+
+遇到 “Recv failure: Connection was reset” 的错误，执行以下：
+git remote set-url origin https://github.com/zhoz007/ZhheGame.git
