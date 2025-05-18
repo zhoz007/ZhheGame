@@ -12,7 +12,8 @@ export enum GameState {
     HERB_GARDEN,
     SHOP_MANAGEMENT,
     CHALLENGE,
-    SETTINGS
+    SETTINGS,
+    SAVE
 }
 
 export class GameController {

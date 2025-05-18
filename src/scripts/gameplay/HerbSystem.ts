@@ -3,11 +3,29 @@
  */
 import { HerbData, HerbRarity, HerbNature, HerbFlavor } from "../data/HerbData";
 
+// 药材生长状态
+export enum HerbGrowthState {
+    SEEDED,     // 已播种
+    GROWING,    // 生长中
+    MATURE,     // 成熟
+    WILTED      // 枯萎
+}
+
+// 药材生长数据
+interface HerbGrowthData {
+    herbId: string;
+    state: HerbGrowthState;
+    startTime: number;
+    waterLevel: number;    // 水分 0-100
+    health: number;        // 健康度 0-100
+}
+
 export class HerbSystem {
     private static instance: HerbSystem;
     
     private herbs: Map<string, HerbData> = new Map();
     private playerHerbs: Map<string, number> = new Map(); // 玩家拥有的药材及数量
+    private growingHerbs: Map<string, HerbGrowthData> = new Map(); // 正在生长的药材
     
     private constructor() {
         this.initializeHerbs();
@@ -22,8 +40,8 @@ export class HerbSystem {
     
     // 初始化药材数据库
     private initializeHerbs(): void {
-        // 示例药材数据
-        const sampleHerbs: HerbData[] = [
+        // 药材数据
+        const herbData: HerbData[] = [
             {
                 id: "herb_001",
                 name: "当归",
@@ -51,12 +69,39 @@ export class HerbSystem {
                 unlocked: true,
                 level: 1,
                 exp: 0
+            },
+            {
+                id: "herb_003",
+                name: "人参",
+                description: "大补元气，复脉固脱",
+                rarity: HerbRarity.RARE,
+                nature: HerbNature.WARM,
+                flavors: [HerbFlavor.SWEET, HerbFlavor.BITTER],
+                growthTime: 120,
+                effects: ["补气", "固脱", "生津"],
+                imageUrl: "assets/herbs/renshen.png",
+                unlocked: false,
+                level: 1,
+                exp: 0
+            },
+            {
+                id: "herb_004",
+                name: "黄连",
+                description: "清热燥湿，泻火解毒",
+                rarity: HerbRarity.COMMON,
+                nature: HerbNature.COLD,
+                flavors: [HerbFlavor.BITTER],
+                growthTime: 30,
+                effects: ["清热", "燥湿", "解毒"],
+                imageUrl: "assets/herbs/huanglian.png",
+                unlocked: true,
+                level: 1,
+                exp: 0
             }
-            // 更多药材...
         ];
         
         // 添加到药材库
-        sampleHerbs.forEach(herb => {
+        herbData.forEach(herb => {
             this.herbs.set(herb.id, herb);
         });
     }
@@ -82,18 +127,98 @@ export class HerbSystem {
     
     // 种植药材
     public plantHerb(herbId: string): boolean {
-        // TODO: 实现种植逻辑，考虑土地、时间等因素
+        const herb = this.herbs.get(herbId);
+        if (!herb || !herb.unlocked) {
+            return false;
+        }
+        
+        // 检查玩家是否有种子
+        const seedCount = this.playerHerbs.get(herbId) || 0;
+        if (seedCount <= 0) {
+            return false;
+        }
+        
+        // 创建生长数据
+        const growthData: HerbGrowthData = {
+            herbId: herbId,
+            state: HerbGrowthState.SEEDED,
+            startTime: Date.now(),
+            waterLevel: 80,
+            health: 100
+        };
+        
+        // 添加到生长列表
+        this.growingHerbs.set(herbId, growthData);
+        
+        // 扣除种子
+        this.playerHerbs.set(herbId, seedCount - 1);
+        
         return true;
+    }
+    
+    // 浇水
+    public waterHerb(herbId: string): boolean {
+        const growthData = this.growingHerbs.get(herbId);
+        if (!growthData || growthData.state === HerbGrowthState.MATURE) {
+            return false;
+        }
+        
+        growthData.waterLevel = Math.min(100, growthData.waterLevel + 20);
+        return true;
+    }
+    
+    // 更新生长状态
+    public updateGrowth(): void {
+        const now = Date.now();
+        
+        this.growingHerbs.forEach((growthData, herbId) => {
+            const herb = this.herbs.get(herbId);
+            if (!herb) return;
+            
+            // 计算生长时间
+            const growthTime = (now - growthData.startTime) / 1000; // 转换为秒
+            
+            // 更新水分和健康度
+            growthData.waterLevel = Math.max(0, growthData.waterLevel - 0.1);
+            if (growthData.waterLevel < 30) {
+                growthData.health = Math.max(0, growthData.health - 0.2);
+            }
+            
+            // 更新生长状态
+            if (growthTime >= herb.growthTime) {
+                growthData.state = HerbGrowthState.MATURE;
+            } else if (growthTime >= herb.growthTime * 0.7) {
+                growthData.state = HerbGrowthState.GROWING;
+            }
+            
+            // 检查是否枯萎
+            if (growthData.health <= 0) {
+                growthData.state = HerbGrowthState.WILTED;
+            }
+        });
     }
     
     // 收获药材
     public harvestHerb(herbId: string): number {
-        // TODO: 实现收获逻辑，返回收获数量
-        const amount = 1 + Math.floor(Math.random() * 3);
+        const growthData = this.growingHerbs.get(herbId);
+        if (!growthData || growthData.state !== HerbGrowthState.MATURE) {
+            return 0;
+        }
+        
+        // 计算收获数量
+        let amount = 1;
+        const herb = this.herbs.get(herbId);
+        if (herb) {
+            // 根据健康度计算收获量
+            amount = Math.floor(1 + (growthData.health / 100) * 2);
+        }
         
         // 更新玩家库存
         const currentAmount = this.playerHerbs.get(herbId) || 0;
         this.playerHerbs.set(herbId, currentAmount + amount);
+        
+        // 移除生长数据
+        this.growingHerbs.delete(herbId);
         
         return amount;
     }
@@ -105,7 +230,31 @@ export class HerbSystem {
     
     // 获取可种植的药材
     public getPlantableHerbs(): HerbData[] {
-        // 简单实现：返回所有已解锁的药材
         return Array.from(this.herbs.values()).filter(herb => herb.unlocked);
+    }
+    
+    // 获取正在生长的药材
+    public getGrowingHerbs(): {herb: HerbData, growth: HerbGrowthData}[] {
+        const result: {herb: HerbData, growth: HerbGrowthData}[] = [];
+        
+        this.growingHerbs.forEach((growthData, herbId) => {
+            const herb = this.herbs.get(herbId);
+            if (herb) {
+                result.push({herb, growth: growthData});
+            }
+        });
+        
+        return result;
+    }
+    
+    // 解锁新药材
+    public unlockHerb(herbId: string): boolean {
+        const herb = this.herbs.get(herbId);
+        if (!herb) {
+            return false;
+        }
+        
+        herb.unlocked = true;
+        return true;
     }
 }

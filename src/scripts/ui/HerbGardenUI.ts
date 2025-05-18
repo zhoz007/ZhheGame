@@ -1,7 +1,7 @@
 /**
  * 药材种植界面 - 实现药材种植、采集功能
  */
-import { BaseUI } from "./UIManager";
+import { BaseUI } from "./BaseUI";
 import { HerbSystem } from "../gameplay/HerbSystem";
 import { HerbData, HerbRarity } from "../data/HerbData";
 

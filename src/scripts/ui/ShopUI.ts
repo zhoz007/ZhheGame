@@ -1,7 +1,7 @@
 /**
  * 店铺经营界面 - 实现店铺管理、顾客交互功能
  */
-import { BaseUI } from "./UIManager";
+import { BaseUI } from "./BaseUI";
 import { ShopSystem, ShopData, CustomerData } from "../gameplay/ShopSystem";
 import { HerbSystem } from "../gameplay/HerbSystem";
 

@@ -1,7 +1,7 @@
 /**
  * 诊脉界面 - 实现望闻问切和开方功能
  */
-import { BaseUI } from "./UIManager";
+import { BaseUI } from "./BaseUI";
 import { DiagnosisSystem, PatientData, PrescriptionData } from "../gameplay/DiagnosisSystem";
 import { HerbSystem } from "../gameplay/HerbSystem";
 import { HerbData } from "../data/HerbData";
